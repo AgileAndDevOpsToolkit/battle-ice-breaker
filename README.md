@@ -27,13 +27,23 @@ Le fichier doit respecter la structure suivante :
 - Ligne 1 : le thème (exemple : `Superhéro`)
 - Lignes suivantes : une entrée par ligne
 
+### Commentaires
+
+Il est possible d'annoter le fichier à l'aide de commentaires avec `//` :
+
+- Une ligne commençant par `//` est entièrement ignorée.
+- Sur une ligne d'item, tout ce qui suit `//` est ignoré (commentaire de fin de ligne).
+
 Exemple :
 
 ```txt
 Superhéro
+// Héros Marvel
 Spider-Man
-Iron Man
+Iron Man // mon super héro préféré
 Captain America
+// Héros DC (ignorés ici)
+// Batman
 Thor
 Hulk
 ```

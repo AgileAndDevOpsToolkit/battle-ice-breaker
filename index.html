@@ -571,6 +571,11 @@
       return text
         .replace(/\uFEFF/g, "")
         .split(/\r?\n/)
+        .map(l => {
+          // Strip inline comments (everything after //)
+          const commentIdx = l.indexOf("//");
+          return commentIdx !== -1 ? l.slice(0, commentIdx) : l;
+        })
         .map(l => l.trim())
         .filter(l => l.length > 0);
     }
