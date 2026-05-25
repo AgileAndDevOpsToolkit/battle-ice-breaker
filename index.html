@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BATTLE</title>
+
+  <style>
+    :root{
+      --ink:#111;
+      --paper:#fff7e6;
+
+      --teal:#17b6a6;
+      --magenta:#ff2d64;
+
+      /* Couleurs demandées */
+      --starYellow:#FAF10C;   /* jaune pétant */
+      --paleYellow:#F8EFBA;   /* jaune pâle */
+
+      /* Boutons header */
+      --reloadGreen:#35F06A;  /* vert clair pétant */
+      --resetOrange:#FF7A00;  /* orange pétant */
+
+      --bgStroke: 4px;    /* décor : traits fins */
+      --uiStroke: 8px;    /* UI : traits épais */
+
+      --shadow: 10px 10px 0 rgba(0,0,0,.20);
+      --shadowSmall: 6px 6px 0 rgba(0,0,0,.16);
+
+      --radius: 22px;
+      --radius2: 16px;
+
+      --card: rgba(255,255,255,.88);
+      --card2: rgba(255,255,255,.95);
+
+      --champGlowA: 0 0 0 6px rgba(255, 241, 12, .55);
+      --champGlowB: 0 0 0 12px rgba(255, 45, 100, .22);
+      --champGlowHover: 0 0 0 6px rgba(255, 241, 12, .72), 0 0 0 14px rgba(23, 182, 166, .25);
+
+      --shapeStroke: 10px;
+
+      --starClip: polygon(
+        50% 4%,
+        59% 16%,
+        74% 10%,
+        70% 26%,
+        90% 24%,
+        78% 38%,
+        94% 50%,
+        78% 62%,
+        90% 76%,
+        70% 74%,
+        74% 90%,
+        59% 84%,
+        50% 96%,
+        41% 84%,
+        26% 90%,
+        30% 74%,
+        10% 76%,
+        22% 62%,
+        6% 50%,
+        22% 38%,
+        10% 24%,
+        30% 26%,
+        26% 10%,
+        41% 16%
+      );
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--ink);
+      background: var(--paper);
+      overflow-x:hidden;
+    }
+
+    /* ===== Comic background (3 panels) ===== */
+    .bg{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:0;
+    }
+    .bg .panel{
+      position:absolute;
+      border: var(--bgStroke) solid var(--ink);
+      overflow:hidden;
+    }
+    .bg .panel::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 2px 2px, rgba(0,0,0,.18) 1.2px, transparent 1.9px);
+      background-size: 14px 14px;
+      opacity:.28;
+      mix-blend-mode:multiply;
+    }
+    .bg .p1{
+      left:-6%;
+      top:-8%;
+      width:58%;
+      height:78%;
+      transform: rotate(-8deg);
+      background: linear-gradient(145deg, rgba(23,182,166,.95), rgba(23,182,166,.78));
+    }
+    .bg .p2{
+      right:-10%;
+      top:-10%;
+      width:64%;
+      height:56%;
+      transform: rotate(9deg);
+      background: linear-gradient(145deg, rgba(255,45,100,.95), rgba(255,45,100,.78));
+    }
+    .bg .p3{
+      right:-6%;
+      bottom:-10%;
+      width:64%;
+      height:62%;
+      transform: rotate(-10deg);
+      background: linear-gradient(145deg, rgba(250,241,12,.98), rgba(250,241,12,.80));
+    }
+
+    /* ===== Layout ===== */
+    .app{
+      position:relative;
+      z-index:1;
+      width:min(980px, 92vw);
+      margin: 0 auto;
+      padding: 34px 0 44px;
+      display:grid;
+      gap:18px;
+    }
+
+    header{
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+      padding: 6px 0 0;
+    }
+    h1{
+      margin:0;
+      font-size: clamp(40px, 6vw, 74px);
+      letter-spacing: 1px;
+      font-weight: 1000;
+      text-transform: uppercase;
+      color: #101010;
+      text-shadow:
+        3px 3px 0 rgba(250,241,12,.95),
+        6px 6px 0 rgba(0,0,0,.12);
+    }
+
+    .card{
+      border: var(--uiStroke) solid var(--ink);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      backdrop-filter: blur(4px);
+    }
+
+    /* ===== Loader minimal bar ===== */
+    .loaderBar{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:12px;
+      padding: 12px 12px;
+      background: var(--card2);
+    }
+
+    .btn{
+      appearance:none;
+      border: 6px solid var(--ink);
+      border-radius: 16px;
+      padding: 10px 14px;
+      font-weight: 1000;
+      letter-spacing:.6px;
+      text-transform: uppercase;
+      cursor:pointer;
+      box-shadow: var(--shadowSmall);
+      transition: transform .08s ease, filter .2s ease, opacity .2s ease;
+      user-select:none;
+      color:#111;
+      font-family: inherit;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn:hover{ filter: brightness(1.03); }
+    .btn[disabled]{ opacity:.45; cursor:not-allowed; box-shadow:none; }
+
+    .btn.reset{
+      background: linear-gradient(180deg, var(--resetOrange), #FFB000);
+    }
+    .btn.reload{
+      background: linear-gradient(180deg, var(--reloadGreen), #B7FF3B);
+    }
+
+    /* ===== Loader body ===== */
+    .loaderBody{
+      padding: 16px;
+      display:none;
+      background: rgba(255,255,255,.70);
+      border-top: var(--uiStroke) solid var(--ink);
+    }
+    .loaderBody.open{ display:block; }
+
+    .dropzone{
+      border: 2px solid rgba(17,17,17,.35);
+      border-radius: var(--radius2);
+      padding: 16px;
+      background: rgba(255,255,255,.90);
+      box-shadow: 0 2px 0 rgba(0,0,0,.08) inset;
+      cursor:pointer;
+    }
+
+    .dropInner{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+    }
+
+    .instructions{
+      margin:0;
+      font-size:14px;
+      line-height:1.4;
+      font-weight: 700;
+      color: #111;
+      max-width: 680px;
+    }
+
+    .browseWrap{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .btn.browse{
+      background: linear-gradient(180deg, #fff, #f2f2f2);
+    }
+
+    .hint{
+      font-size: 12px;
+      font-weight: 900;
+      padding: 6px 10px;
+      border: 2px solid rgba(17,17,17,.35);
+      border-radius: 999px;
+      background: #fff;
+    }
+
+    input[type="file"]{ display:none; }
+
+    .error{
+      display:none;
+      margin-top: 12px;
+      border: 4px solid var(--ink);
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: #ffe6ee;
+      font-weight: 800;
+      box-shadow: var(--shadowSmall);
+    }
+
+    /* ===== Launch button (only at the very beginning) ===== */
+    .launchRow{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding: 2px 0;
+    }
+    .btn.launch{
+      min-width: min(420px, 100%);
+      font-size: 22px;
+      padding: 14px 22px;
+      border-radius: 20px;
+      border-width: 6px;
+      background: linear-gradient(180deg, var(--starYellow), #FFBE00);
+    }
+    .launchRow.hidden{ display:none; }
+
+    /* ===== Game area ===== */
+    .game{
+      padding: 18px;
+      background: rgba(255,255,255,.86);
+    }
+
+    .arena{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 14px;
+      align-items:stretch;
+    }
+    @media (max-width: 860px){
+      .arena{ grid-template-columns:1fr; }
+      .or{ justify-self:center; }
+    }
+
+    .or{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 1000;
+      font-size: 20px;
+      text-transform: uppercase;
+      border: var(--uiStroke) solid var(--ink);
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: var(--shadowSmall);
+      padding: 10px 12px;
+      height: fit-content;
+      align-self:center;
+    }
+
+    /* ===== Choice buttons ===== */
+    .choice{
+      appearance:none;
+      width:100%;
+      cursor:pointer;
+      position:relative;
+      min-height: 168px;
+      overflow: visible; /* allow text to be above */
+      border: none;
+      background: transparent;
+      padding: 0;
+      box-shadow: none;
+      transition: transform .08s ease, filter .2s ease;
+    }
+    .choice:hover{ filter: brightness(1.01); }
+    .choice:active{ transform: translateY(1px); }
+    .choice[disabled]{ opacity:.5; cursor:not-allowed; }
+
+    .shape-outline,
+    .shape-fill{
+      position:absolute;
+      inset: 0;
+      pointer-events:none;
+      display:block;
+    }
+
+    /* Outline gets the shadow */
+    .shape-outline{
+      box-shadow: var(--shadow);
+    }
+
+    /* Oval (challenger default) */
+    .choice.challenger .shape-outline{
+      border-radius: 999px;
+      background: var(--ink);
+    }
+    .choice.challenger .shape-fill{
+      border-radius: 999px;
+      background: var(--paleYellow);
+      inset: var(--shapeStroke);
+    }
+
+    /* Star (champion always) */
+    .choice.champion .shape-outline{
+      clip-path: var(--starClip);
+      background: var(--ink);
+    }
+    .choice.champion .shape-fill{
+      clip-path: var(--starClip);
+      background: var(--starYellow);
+      inset: var(--shapeStroke);
+    }
+
+    /* Challenger hover becomes star */
+    .choice.challenger:hover .shape-outline{
+      clip-path: var(--starClip);
+      border-radius: 0;
+      background: var(--ink);
+    }
+    .choice.challenger:hover .shape-fill{
+      clip-path: var(--starClip);
+      border-radius: 0;
+      background: var(--starYellow);
+      inset: var(--shapeStroke);
+    }
+
+    /* Halftone inside fill */
+    .choice .shape-fill::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 2px 2px, rgba(0,0,0,.18) 1.0px, transparent 1.8px);
+      background-size: 16px 16px;
+      opacity:.10;
+      pointer-events:none;
+    }
+
+    /* Champion glow */
+    .choice.champion .shape-outline{
+      box-shadow: var(--shadow), var(--champGlowA), var(--champGlowB);
+    }
+    .choice.champion:hover .shape-outline{
+      box-shadow: var(--shadow), var(--champGlowHover);
+    }
+
+    /* WORDS FONT: Comic Sans MS Bold for list words (choices + final winner) */
+    .word{
+      font-family: "Comic Sans MS", "Comic Sans", cursive;
+      font-weight: 900;
+    }
+
+    /* Label on top of shapes */
+    .label{
+      position:relative;
+      z-index:5;
+      display:block;
+      text-align:center;
+      font-size: clamp(28px, 3.3vw, 54px);
+      line-height:1.05;
+      color:#111;
+      text-shadow: 2px 2px 0 rgba(255,255,255,.65);
+      padding: 20px 14px;
+    }
+
+    /* Result */
+    .result{
+      display:none;
+      text-align:center;
+      padding: 24px 10px 10px;
+    }
+    .result h2{
+      margin:0 0 10px 0;
+      font-size: clamp(22px, 3vw, 40px);
+      font-weight: 1100;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 0 rgba(250,241,12,.85);
+    }
+    .winner{
+      margin:0;
+      font-size: clamp(36px, 5vw, 78px);
+      letter-spacing: .3px;
+      text-shadow: 3px 3px 0 rgba(255,45,100,.32);
+    }
+
+    :focus-visible{
+      outline: 6px solid rgba(0,0,0,.18);
+      outline-offset: 4px;
+      border-radius: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bg" aria-hidden="true">
+    <div class="panel p1"></div>
+    <div class="panel p2"></div>
+    <div class="panel p3"></div>
+  </div>
+
+  <div class="app" role="application" aria-label="Battle de préférences">
+    <header>
+      <h1 id="title">BATTLE</h1>
+    </header>
+
+    <section class="card" id="loaderCard">
+      <div class="loaderBar">
+        <button class="btn reset" id="resetBtn" type="button" disabled>Reset</button>
+        <button class="btn reload" id="reloadBtn" type="button">Recharger</button>
+      </div>
+
+      <div class="loaderBody open" id="loaderBody">
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Zone de dépôt">
+          <div class="dropInner">
+            <p class="instructions">
+              Glisse-dépose un fichier <b>.txt</b> ici, ou clique sur <b>Parcourir</b>.<br/>
+              Format : 1 ligne = 1 mot • 1ère ligne = THEME • puis les mots.
+            </p>
+            <div class="browseWrap">
+              <button class="btn browse" id="browseBtn" type="button">Parcourir</button>
+              <span class="hint">.txt</span>
+              <input id="fileInput" type="file" accept=".txt,text/plain" />
+            </div>
+          </div>
+        </div>
+
+        <div class="error" id="errorBox"></div>
+      </div>
+    </section>
+
+    <div class="launchRow" id="launchRow">
+      <button class="btn launch" id="startBtn" disabled>Lancer</button>
+    </div>
+
+    <section class="card game" aria-live="polite">
+      <div class="arena" id="arena">
+        <button class="choice challenger" id="leftBtn" disabled>
+          <span class="shape-outline" aria-hidden="true"></span>
+          <span class="shape-fill" aria-hidden="true"></span>
+          <span class="label word" id="leftLabel">—</span>
+        </button>
+
+        <div class="or">OU ?</div>
+
+        <button class="choice challenger" id="rightBtn" disabled>
+          <span class="shape-outline" aria-hidden="true"></span>
+          <span class="shape-fill" aria-hidden="true"></span>
+          <span class="label word" id="rightLabel">—</span>
+        </button>
+      </div>
+
+      <div class="result" id="result">
+        <h2 id="resultTitle">TON PRÉFÉRÉ EST :</h2>
+        <p class="winner word" id="winnerText">—</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // ===== State =====
+    let THEME = "";
+    let originalWords = [];
+    let bag = [];
+    let leftWord = null;
+    let rightWord = null;
+    let inGame = false;
+
+    // NEW: once the game has started at least once, "Lancer" should never show again
+    let hasStartedOnce = false;
+
+    // ===== DOM =====
+    const titleEl = document.getElementById("title");
+
+    const loaderBody = document.getElementById("loaderBody");
+    const reloadBtn = document.getElementById("reloadBtn");
+    const resetBtn  = document.getElementById("resetBtn");
+
+    const dropzone = document.getElementById("dropzone");
+    const browseBtn = document.getElementById("browseBtn");
+    const fileInput = document.getElementById("fileInput");
+    const errorBox = document.getElementById("errorBox");
+
+    const launchRow = document.getElementById("launchRow");
+    const startBtn  = document.getElementById("startBtn");
+
+    const arena = document.getElementById("arena");
+    const leftBtn = document.getElementById("leftBtn");
+    const rightBtn = document.getElementById("rightBtn");
+    const leftLabel = document.getElementById("leftLabel");
+    const rightLabel = document.getElementById("rightLabel");
+
+    const result = document.getElementById("result");
+    const resultTitle = document.getElementById("resultTitle");
+    const winnerText = document.getElementById("winnerText");
+
+    // ===== Helpers =====
+    function setTitle(){
+      const t = THEME ? `${THEME} BATTLE` : "BATTLE";
+      titleEl.textContent = t.toUpperCase();
+      document.title = t;
+    }
+
+    function showError(msg){
+      errorBox.style.display = "block";
+      errorBox.textContent = msg;
+    }
+    function clearError(){
+      errorBox.style.display = "none";
+      errorBox.textContent = "";
+    }
+
+    function normalizeLines(text){
+      return text
+        .replace(/\uFEFF/g, "")
+        .split(/\r?\n/)
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
+    }
+
+    function shuffleInPlace(arr){
+      for(let i = arr.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function drawFromBag(){
+      if(bag.length === 0) return null;
+      const idx = Math.floor(Math.random() * bag.length);
+      const w = bag[idx];
+      bag.splice(idx, 1);
+      return w;
+    }
+
+    function collapseLoader(){ loaderBody.classList.remove("open"); }
+    function expandLoader(){ loaderBody.classList.add("open"); }
+
+    function showArena(){
+      arena.style.display = "grid";
+      result.style.display = "none";
+    }
+    function showResult(winner){
+      arena.style.display = "none";
+      result.style.display = "block";
+      resultTitle.textContent = THEME ? `TON ${THEME} PRÉFÉRÉ EST :` : "TON PRÉFÉRÉ EST :";
+      winnerText.textContent = winner || "—";
+    }
+
+    function clearChampion(){
+      leftBtn.classList.remove("champion");
+      rightBtn.classList.remove("champion");
+      leftBtn.classList.add("challenger");
+      rightBtn.classList.add("challenger");
+    }
+
+    function setChampion(side){
+      clearChampion();
+      const champ = (side === "left") ? leftBtn : rightBtn;
+      const chall = (side === "left") ? rightBtn : leftBtn;
+
+      champ.classList.add("champion");
+      champ.classList.remove("challenger");
+
+      chall.classList.add("challenger");
+      chall.classList.remove("champion");
+    }
+
+    function setGameIdle(){
+      inGame = false;
+      leftWord = null;
+      rightWord = null;
+      clearChampion();
+
+      leftLabel.textContent = "—";
+      rightLabel.textContent = "—";
+
+      showArena();
+      updateUI();
+    }
+
+    function rebuildBagFromOriginal(){
+      bag = originalWords.slice();
+      shuffleInPlace(bag);
+    }
+
+    function updateUI(){
+      setTitle();
+      resetBtn.disabled = !THEME;
+
+      startBtn.disabled = !(THEME && bag.length >= 2) || inGame;
+
+      // IMPORTANT: Lancer visible ONLY before the first ever start
+      const shouldShowLaunch = (!hasStartedOnce) && (!inGame);
+      launchRow.classList.toggle("hidden", !shouldShowLaunch);
+
+      leftBtn.disabled = !inGame;
+      rightBtn.disabled = !inGame;
+    }
+
+    // ===== Loading file =====
+    async function loadFile(file){
+      clearError();
+      try{
+        const text = await file.text();
+        const lines = normalizeLines(text);
+
+        if(lines.length < 3){
+          showError("Le fichier doit contenir au minimum 3 lignes : 1 thème + au moins 2 mots.");
+          THEME = "";
+          originalWords = [];
+          rebuildBagFromOriginal();
+          hasStartedOnce = false; // new file state
+          setGameIdle();
+          expandLoader();
+          return;
+        }
+
+        THEME = lines[0];
+        const words = lines.slice(1);
+
+        const seen = new Set();
+        const unique = [];
+        for(const w of words){
+          const key = w.toLowerCase();
+          if(!seen.has(key)){
+            seen.add(key);
+            unique.push(w);
+          }
+        }
+
+        if(unique.length < 2){
+          showError("Après suppression des doublons, il reste moins de 2 mots.");
+          THEME = "";
+          originalWords = [];
+          rebuildBagFromOriginal();
+          hasStartedOnce = false;
+          setGameIdle();
+          expandLoader();
+          return;
+        }
+
+        originalWords = unique.slice();
+        rebuildBagFromOriginal();
+
+        // New file => allow Lancer again
+        hasStartedOnce = false;
+
+        setGameIdle();
+
+        collapseLoader();
+        updateUI();
+      } catch(e){
+        showError("Impossible de lire le fichier. Essaie un .txt simple.");
+      }
+    }
+
+    // ===== Dropzone highlight =====
+    function highlightDrop(on){
+      dropzone.style.outline = on ? "4px solid rgba(17,17,17,.18)" : "none";
+      dropzone.style.outlineOffset = on ? "4px" : "0";
+      dropzone.style.filter = on ? "brightness(1.01)" : "none";
+    }
+
+    ["dragenter","dragover"].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        highlightDrop(true);
+      });
+    });
+    ["dragleave","drop"].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault(); e.stopPropagation();
+        highlightDrop(false);
+      });
+    });
+    dropzone.addEventListener("drop", async (e) => {
+      const file = e.dataTransfer?.files?.[0];
+      if(file) await loadFile(file);
+    });
+
+    dropzone.addEventListener("click", (e) => {
+      if(e.target && e.target.id === "browseBtn") return;
+      fileInput.click();
+    });
+
+    browseBtn.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if(file) await loadFile(file);
+    });
+
+    // ===== Minimal bar buttons =====
+    reloadBtn.addEventListener("click", () => {
+      expandLoader();
+      loaderBody.scrollIntoView({behavior:"smooth", block:"nearest"});
+    });
+
+    resetBtn.addEventListener("click", () => {
+      if(!THEME) return;
+      clearError();
+      rebuildBagFromOriginal();
+      // NOTE: do NOT allow "Lancer" to reappear after first start
+      setGameIdle();
+    });
+
+    // ===== Start game =====
+    startBtn.addEventListener("click", () => {
+      clearError();
+      if(!(THEME && bag.length >= 2)) return;
+
+      leftWord = drawFromBag();
+      rightWord = drawFromBag();
+      leftLabel.textContent = leftWord;
+      rightLabel.textContent = rightWord;
+
+      inGame = true;
+      hasStartedOnce = true; // hide launch forever (until new file load)
+
+      clearChampion(); // both challengers at start
+      showArena();
+      updateUI();
+    });
+
+    // ===== Round logic =====
+    function onPick(side){
+      if(!inGame) return;
+
+      const picked = (side === "left") ? leftWord : rightWord;
+      setChampion(side);
+
+      if(bag.length === 0){
+        inGame = false;
+        updateUI();
+        showResult(picked);
+        return;
+      }
+
+      const newWord = drawFromBag();
+
+      if(side === "left"){
+        leftWord = picked;
+        rightWord = newWord;
+        leftLabel.textContent = leftWord;
+        rightLabel.textContent = rightWord;
+      } else {
+        rightWord = picked;
+        leftWord = newWord;
+        rightLabel.textContent = rightWord;
+        leftLabel.textContent = leftWord;
+      }
+
+      updateUI();
+    }
+
+    leftBtn.addEventListener("click", () => onPick("left"));
+    rightBtn.addEventListener("click", () => onPick("right"));
+
+    // init
+    setTitle();
+    updateUI();
+  </script>
+</body>
+</html>
