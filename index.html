@@ -517,6 +517,7 @@
   <script>
     // ===== State =====
     let THEME = "";
+    let THEME_GENDER = "ton";
     let originalWords = [];
     let bag = [];
     let leftWord = null;
@@ -567,6 +568,19 @@
       errorBox.textContent = "";
     }
 
+    function parseThemeLine(rawTheme){
+      const words = rawTheme.trim().split(/\s+/).filter(Boolean);
+      if(words.length === 0) return null;
+
+      const firstLower = words[0].toLowerCase();
+      if(firstLower === "ton" || firstLower === "ta"){
+        if(words.length < 2) return null;
+        return { type: words[1], gender: firstLower };
+      }
+
+      return { type: words[0], gender: "ton" };
+    }
+
     function normalizeLines(text){
       return text
         .replace(/\uFEFF/g, "")
@@ -606,7 +620,15 @@
     function showResult(winner){
       arena.style.display = "none";
       result.style.display = "block";
-      resultTitle.textContent = THEME ? `TON ${THEME} PRÉFÉRÉ EST :` : "TON PRÉFÉRÉ EST :";
+
+      if(!THEME){
+        resultTitle.textContent = "TON PRÉFÉRÉ EST :";
+      } else if(THEME_GENDER === "ta"){
+        resultTitle.textContent = `TA ${THEME} PRÉFÉRÉE EST :`;
+      } else {
+        resultTitle.textContent = `TON ${THEME} PRÉFÉRÉ EST :`;
+      }
+
       winnerText.textContent = winner || "—";
     }
 
@@ -671,6 +693,7 @@
         if(lines.length < 3){
           showError("Le fichier doit contenir au minimum 3 lignes : 1 thème + au moins 2 mots.");
           THEME = "";
+          THEME_GENDER = "ton";
           originalWords = [];
           rebuildBagFromOriginal();
           hasStartedOnce = false; // new file state
@@ -679,7 +702,21 @@
           return;
         }
 
-        THEME = lines[0];
+        const parsedTheme = parseThemeLine(lines[0]);
+        if(!parsedTheme){
+          showError("La 1ère ligne doit contenir un type de liste (ex: Superhéro ou Ton Superhéro / Ta Musique).");
+          THEME = "";
+          THEME_GENDER = "ton";
+          originalWords = [];
+          rebuildBagFromOriginal();
+          hasStartedOnce = false;
+          setGameIdle();
+          expandLoader();
+          return;
+        }
+
+        THEME = parsedTheme.type;
+        THEME_GENDER = parsedTheme.gender;
         const words = lines.slice(1);
 
         const seen = new Set();
@@ -695,6 +732,7 @@
         if(unique.length < 2){
           showError("Après suppression des doublons, il reste moins de 2 mots.");
           THEME = "";
+          THEME_GENDER = "ton";
           originalWords = [];
           rebuildBagFromOriginal();
           hasStartedOnce = false;

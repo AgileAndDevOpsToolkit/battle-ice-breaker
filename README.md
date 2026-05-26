@@ -24,8 +24,38 @@ Le principe est simple :
 ## Format du fichier d'entrée
 
 Le fichier doit respecter la structure suivante :
-- Ligne 1 : le thème (exemple : `Superhéro`)
+- Ligne 1 : le thème (voir règles ci-dessous)
 - Lignes suivantes : une entrée par ligne
+
+Règles pour la ligne 1 :
+- Si la ligne commence par `Ton` ou `Ta` (insensible à la casse), ce mot est retiré du type de liste et sert à définir le genre.
+- Le type de liste est ensuite :
+	- le 2e mot si la ligne commence par `Ton` ou `Ta`
+	- sinon le 1er mot
+
+Exemples valides de ligne 1 :
+- `Superhéro` -> type = `Superhéro`, genre = `ton`
+- `Ton superhéro` -> type = `superhéro`, genre = `ton`
+- `Ta musique` -> type = `musique`, genre = `ta`
+
+Le genre est utilisé dans la phrase finale :
+- `Ton ...` -> `ton superhéro préféré`
+- `Ta ...` -> `ta musique préférée`
+
+Exemple complet de fichier :
+
+```txt
+Ta musique
+Bohemian Rhapsody
+Billie Jean
+Smells Like Teen Spirit
+Imagine
+```
+
+Dans cet exemple :
+- type = `musique`
+- genre = `ta`
+- phrase finale attendue : `TA MUSIQUE PRÉFÉRÉE EST :`
 
 ### Commentaires
 
